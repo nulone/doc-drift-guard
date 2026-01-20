@@ -30,18 +30,19 @@ def extract_code_blocks(content: str) -> list[CodeBlock]:
     while i < len(lines):
         line = lines[i]
 
-        # Match opening fence: ```language or ~~~language
-        match = re.match(r'^(```|~~~)(\w+)?', line)
+        # Match opening fence: ```language or ~~~language (with optional leading whitespace)
+        match = re.match(r'^(\s*)(```|~~~)(\w+)?', line)
         if match:
-            fence_type = match.group(1)  # ``` or ~~~
-            language = match.group(2) or ""
+            indent = match.group(1)  # Capture indent for matching closing fence
+            fence_type = match.group(2)  # ``` or ~~~
+            language = match.group(3) or ""
             line_start = i + 1  # Content starts on next line
             code_lines = []
             i += 1
 
-            # Collect lines until closing fence (must match opening fence type)
+            # Collect lines until closing fence (must match opening fence type and indent)
             while i < len(lines):
-                if re.match(rf'^{re.escape(fence_type)}\s*$', lines[i]):
+                if re.match(rf'^{re.escape(indent)}{re.escape(fence_type)}\s*$', lines[i]):
                     line_end = i
                     blocks.append(CodeBlock(
                         language=language,

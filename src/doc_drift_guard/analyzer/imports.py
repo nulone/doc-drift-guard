@@ -12,6 +12,7 @@ class ImportedSymbol:
     symbol: str
     module: str
     alias: str | None = None
+    level: int = 0  # P1-2 FIX: Relative import level (0=absolute, 1=., 2=.., etc)
 
 
 def extract_symbols(imports: list[Import]) -> list[ImportedSymbol]:
@@ -26,6 +27,22 @@ def extract_symbols(imports: list[Import]) -> list[ImportedSymbol]:
     symbols = []
 
     for imp in imports:
+        # Handle plain imports (import math, import os.path) - verify the module itself exists
+        if not imp.names:
+            # P1-3 FIX: Use FULL module path, not just top-level
+            # For "import os.path", verify os.path exists, not just os
+            alias = None
+            if imp.aliases and len(imp.aliases) > 0:
+                alias = list(imp.aliases.keys())[0]
+            # Use the full module path for verification
+            symbols.append(ImportedSymbol(
+                symbol=imp.module,
+                module=imp.module,
+                alias=alias,
+                level=imp.level  # P1-2 FIX: Pass level through
+            ))
+            continue
+
         for name in imp.names:
             # Skip star imports - they can't be checked for drift
             if name == "*":
@@ -41,7 +58,8 @@ def extract_symbols(imports: list[Import]) -> list[ImportedSymbol]:
             symbols.append(ImportedSymbol(
                 symbol=name,
                 module=imp.module,
-                alias=alias
+                alias=alias,
+                level=imp.level  # P1-2 FIX: Pass level through
             ))
 
     return symbols

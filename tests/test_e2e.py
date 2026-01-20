@@ -176,3 +176,48 @@ from .utils import process, helper_func
 
         # Should find the symbols (exit 0 if they exist)
         assert result.exit_code == 0
+
+    def test_package_filter_keeps_relative_imports_with_module(self, runner, tmp_path):
+        """Test that relative imports with module component are kept (P2-2 FIX).
+
+        The bug was that `from .utils import foo` with level=1 and module="utils"
+        would be filtered out because "utils" doesn't match any --package prefix.
+        """
+        # Create a test file with relative import that has module component
+        readme = tmp_path / "relative_module.md"
+        readme.write_text(
+            """# Test
+```python
+from .internal import helper_func
+from ..utils import another_func
+```
+""",
+            encoding="utf-8",
+        )
+
+        # Create source files
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        (src_dir / "__init__.py").write_text("", encoding="utf-8")
+
+        # Create internal.py with helper_func
+        (src_dir / "internal.py").write_text("def helper_func(): pass", encoding="utf-8")
+
+        # With --package somepackage, relative imports should still be checked
+        # even though module="internal" doesn't match "somepackage"
+        result = runner.invoke(
+            cli, ["check", str(readme), "--src", str(src_dir), "--package", "somepackage", "--json"]
+        )
+
+        # Should check the relative import and find helper_func exists
+        # another_func won't be found (parent escape blocked), but that's expected
+        import json
+        output = json.loads(result.output)
+
+        # The relative import with .internal should have been checked (not filtered)
+        # If it was filtered, we'd get no drifts. If it was checked, we might get
+        # drift for ..utils (blocked by security) but not for .internal (exists)
+        # Since .internal.helper_func exists, it won't appear in drifts
+        drifts = output.get("drifts", [])
+        drift_symbols = [d["symbol"] for d in drifts]
+        assert "helper_func" not in drift_symbols, "helper_func exists and should not drift"

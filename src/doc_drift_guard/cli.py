@@ -64,15 +64,16 @@ def check(doc_file: Path, src: Path, json_output: bool, packages: tuple[str, ...
                 if packages:
                     symbols = [
                         s for s in symbols
-                        # Keep relative imports (empty string module) and matching packages
-                        if s.module == "" or any(
+                        # P2-2 FIX: Always include relative imports (level > 0)
+                        # Also keep empty module and matching packages
+                        if s.level > 0 or s.module == "" or any(
                             s.module == p or s.module.startswith(f"{p}.") for p in packages
                         )
                     ]
 
                 # Resolve each symbol
                 for sym in symbols:
-                    resolution = resolve_import(sym.module, sym.symbol, src)
+                    resolution = resolve_import(sym.module, sym.symbol, src, sym.level)
                     if not resolution.exists:
                         all_drifts.append({
                             "symbol": sym.symbol,

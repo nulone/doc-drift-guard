@@ -119,6 +119,52 @@ print("hello")
         assert len(blocks2) == 1
         assert len(blocks3) == 1
 
+    def test_indented_code_block_in_list(self):
+        """Test indented code block inside a list (P2-1 FIX)."""
+        content = """# Title
+
+- Item 1
+  ```python
+  x = 1
+  ```
+- Item 2
+"""
+        blocks = extract_code_blocks(content)
+        assert len(blocks) == 1
+        assert blocks[0].language == "python"
+        assert "x = 1" in blocks[0].code
+
+    def test_deeply_indented_code_block(self):
+        """Test deeply indented code block (P2-1 FIX)."""
+        content = """# Title
+
+        ```python
+        x = 1
+        ```
+"""
+        blocks = extract_code_blocks(content)
+        assert len(blocks) == 1
+        assert blocks[0].language == "python"
+        assert "x = 1" in blocks[0].code
+
+    def test_indented_code_block_mixed(self):
+        """Test mixed indented and non-indented blocks (P2-1 FIX)."""
+        content = """# Title
+
+```python
+top_level = True
+```
+
+1. Step one
+   ```python
+   indented = True
+   ```
+"""
+        blocks = extract_code_blocks(content)
+        assert len(blocks) == 2
+        assert "top_level" in blocks[0].code
+        assert "indented" in blocks[1].code
+
 
 class TestPythonParser:
     """Tests for Python parser."""
@@ -215,3 +261,33 @@ result = another_function()
         imports3 = parse_imports(code3)
         assert len(imports3) == 1
         assert "parent_func" in imports3[0].names
+
+    def test_relative_import_level_preserved(self):
+        """Test relative import level is preserved (P1-3 FIX)."""
+        # Level 0 (absolute)
+        code0 = "from pathlib import Path"
+        imports0 = parse_imports(code0)
+        assert imports0[0].level == 0
+
+        # Level 1 (from . import)
+        code1 = "from . import helper"
+        imports1 = parse_imports(code1)
+        assert imports1[0].level == 1
+        assert imports1[0].module == ""
+
+        # Level 1 with module (from .submodule import)
+        code1m = "from .submodule import func"
+        imports1m = parse_imports(code1m)
+        assert imports1m[0].level == 1
+        assert imports1m[0].module == "submodule"
+
+        # Level 2 (from .. import)
+        code2 = "from .. import parent_func"
+        imports2 = parse_imports(code2)
+        assert imports2[0].level == 2
+
+        # Level 3 (from ... import)
+        code3 = "from ...grandparent import func"
+        imports3 = parse_imports(code3)
+        assert imports3[0].level == 3
+        assert imports3[0].module == "grandparent"

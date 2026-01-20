@@ -11,6 +11,7 @@ class Import:
     module: str
     names: list[str]
     aliases: dict[str, str]
+    level: int = 0  # P1-3 FIX: Relative import level (0=absolute, 1=., 2=.., etc)
 
 
 @dataclass
@@ -64,7 +65,8 @@ def parse_imports(code: str) -> list[Import]:
             imports.append(Import(
                 module=module,
                 names=names,
-                aliases=aliases
+                aliases=aliases,
+                level=node.level  # P1-3 FIX: Preserve relative import level
             ))
 
     return imports
