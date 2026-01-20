@@ -1,0 +1,32 @@
+name: 'Doc Drift Guard'
+description: 'Detect outdated code examples in documentation'
+branding:
+  icon: 'shield'
+  color: 'blue'
+inputs:
+  docs:
+    description: 'Markdown files to check (glob pattern)'
+    required: false
+    default: 'README.md'
+  src:
+    description: 'Source directory to validate against'
+    required: false
+    default: './src'
+  package:
+    description: 'Package prefix to check (e.g., mypackage)'
+    required: false
+    default: ''
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Doc Drift Guard
+      run: pip install doc-drift-guard
+      shell: bash
+    - name: Run Doc Drift Guard
+      run: |
+        if [ -n "${{ inputs.package }}" ]; then
+          ddg check "${{ inputs.docs }}" --src "${{ inputs.src }}" --package "${{ inputs.package }}"
+        else
+          ddg check "${{ inputs.docs }}" --src "${{ inputs.src }}"
+        fi
+      shell: bash

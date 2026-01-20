@@ -1,0 +1,8 @@
+- id: doc-drift-guard
+  name: Doc Drift Guard
+  description: Check for outdated code examples in Markdown documentation
+  entry: ddg check
+  language: python
+  types: [markdown]
+  pass_filenames: true
+  args: ['--src', './src']
