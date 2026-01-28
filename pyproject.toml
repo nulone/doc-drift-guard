@@ -40,7 +40,7 @@ dev = ["pytest>=7.0", "pytest-cov>=4.0", "ruff>=0.1", "pyright>=1.1"]
 ddg = "doc_drift_guard.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["src/doc_drift_guard"]
 
 [tool.ruff]
 line-length = 100
