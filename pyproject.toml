@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "doc-drift-guard"
-version = "0.1.0"
+version = "0.1.2"
 description = "Static analysis tool to detect outdated code examples in documentation"
 readme = "README.md"
 requires-python = ">=3.10"
